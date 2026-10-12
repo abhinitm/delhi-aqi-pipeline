@@ -10,7 +10,7 @@ url = (
     "https://air-quality-api.open-meteo.com/v1/air-quality"
     f"?latitude={LAT}&longitude={LON}"
     "&hourly=pm10,pm2_5,nitrogen_dioxide,ozone"
-    "&past_days=1&forecast_days=1"
+    "&past_days=7&forecast_days=1"
 )
 
 # 1. Collect: get the data from the API
