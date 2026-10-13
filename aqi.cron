@@ -1,0 +1,1 @@
+0 * * * * /bin/bash /Users/abhinitmehndiratta/projects/delhi-aqi-pipeline/run_pipeline.sh >> /Users/abhinitmehndiratta/projects/delhi-aqi-pipeline/logs/pipeline.log 2>&1
