@@ -11,5 +11,24 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  airflow:
+    image: apache/airflow:3.3.1
+    container_name: aqi_airflow
+    command: standalone
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://aqi_user:aqi_pass@postgres:5432/airflow_db
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "True"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./src:/opt/airflow/src
+    depends_on:
+      - postgres
+
 volumes:
   pgdata:
