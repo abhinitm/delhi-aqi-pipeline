@@ -20,17 +20,17 @@ with urllib.request.urlopen(url) as response:
 
 hourly = data["hourly"]
 
-# 2. Connect to the database running in Docker
+# 2. Connect to the database
 conn = psycopg2.connect(
-       host=os.environ.get("DB_HOST", "localhost"),
-       port=int(os.environ.get("DB_PORT", "5433")),
-       dbname="aqi_db",
-       user="aqi_user",
-       password="aqi_pass",
-   )
+    host=os.environ.get("DB_HOST", "localhost"),
+    port=int(os.environ.get("DB_PORT", "5433")),
+    dbname="aqi_db",
+    user="aqi_user",
+    password="aqi_pass",
+)
 cur = conn.cursor()
 
-# 3. Store: insert one row per hour
+# 3. Store: insert new hours, refresh existing ones (upsert)
 rows = zip(
     hourly["time"],
     hourly["pm10"],
@@ -44,7 +44,11 @@ for observed_at, pm10, pm2_5, no2, ozone in rows:
         """
         INSERT INTO raw_aqi (observed_at, pm10, pm2_5, nitrogen_dioxide, ozone)
         VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (observed_at) DO NOTHING
+        ON CONFLICT (observed_at) DO UPDATE SET
+            pm10 = EXCLUDED.pm10,
+            pm2_5 = EXCLUDED.pm2_5,
+            nitrogen_dioxide = EXCLUDED.nitrogen_dioxide,
+            ozone = EXCLUDED.ozone
         """,
         (observed_at, pm10, pm2_5, no2, ozone),
     )
