@@ -1,3 +1,4 @@
+import os
 import json
 import urllib.request
 
@@ -21,12 +22,12 @@ hourly = data["hourly"]
 
 # 2. Connect to the database running in Docker
 conn = psycopg2.connect(
-    host="localhost",
-    port=5433,
-    dbname="aqi_db",
-    user="aqi_user",
-    password="aqi_pass",
-)
+       host=os.environ.get("DB_HOST", "localhost"),
+       port=int(os.environ.get("DB_PORT", "5433")),
+       dbname="aqi_db",
+       user="aqi_user",
+       password="aqi_pass",
+   )
 cur = conn.cursor()
 
 # 3. Store: insert one row per hour

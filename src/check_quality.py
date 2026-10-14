@@ -1,9 +1,14 @@
+import os
+import sys
 import psycopg2
 
 conn = psycopg2.connect(
-    host="localhost", port=5433,
-    dbname="aqi_db", user="aqi_user", password="aqi_pass",
-)
+       host=os.environ.get("DB_HOST", "localhost"),
+       port=int(os.environ.get("DB_PORT", "5433")),
+       dbname="aqi_db",
+       user="aqi_user",
+       password="aqi_pass",
+   )
 cur = conn.cursor()
 
 # Each check: (name, SQL that counts PROBLEMS). 0 problems = PASS.
@@ -44,3 +49,6 @@ conn.close()
 
 print()
 print(f"{len(checks) - failed} passed, {failed} failed")
+
+if failed > 0:
+    sys.exit(1)
