@@ -16,7 +16,7 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor()
 cur.execute("""
-    SELECT observed_at_ist, aqi
+    SELECT observed_at_ist, aqi, pm2_5
     FROM clean_aqi
     WHERE NOT is_forecast
     ORDER BY observed_at_ist
@@ -25,9 +25,10 @@ rows = cur.fetchall()
 cur.close()
 conn.close()
 
-df = pd.DataFrame(rows, columns=["observed_at_ist", "aqi"])
+df = pd.DataFrame(rows, columns=["observed_at_ist", "aqi", "pm2_5"])
 df["observed_at_ist"] = pd.to_datetime(df["observed_at_ist"])
 df["aqi"] = df["aqi"].astype(float)
+df["pm2_5"] = df["pm2_5"].astype(float)
 
 # Skip the first 23 hours: their 24h average is incomplete
 df = df.iloc[23:]
@@ -35,6 +36,7 @@ df = df.iloc[23:]
 os.makedirs("charts", exist_ok=True)
 
 # 2. Chart 1: AQI over time with category bands
+#    (24h-average AQI is the right metric for a day-to-day trend)
 bands = [
     (0, 50, "Good", "#4caf50"),
     (50, 100, "Satisfactory", "#9ccc65"),
@@ -60,16 +62,17 @@ fig.tight_layout()
 fig.savefig("charts/aqi_over_time.png", dpi=150)
 plt.close(fig)
 
-# 3. Chart 2: average AQI by hour of day
+# 3. Chart 2: average HOURLY PM2.5 by hour of day
+#    (hourly values, not 24h averages, so the daily pattern is visible)
 df["hour"] = df["observed_at_ist"].dt.hour
-by_hour = df.groupby("hour")["aqi"].mean()
+by_hour = df.groupby("hour")["pm2_5"].mean()
 
 fig, ax = plt.subplots(figsize=(11, 5))
 ax.bar(by_hour.index, by_hour.values, color="#5c6bc0")
 ax.set_xticks(range(24))
-ax.set_title("Average Delhi AQI by hour of day (India time)")
+ax.set_title("Average hourly PM2.5 by hour of day, Delhi (India time)")
 ax.set_xlabel("Hour of day")
-ax.set_ylabel("Average AQI")
+ax.set_ylabel("Average PM2.5 (µg/m³)")
 fig.tight_layout()
 fig.savefig("charts/aqi_by_hour.png", dpi=150)
 plt.close(fig)
@@ -80,6 +83,6 @@ best_hour = by_hour.idxmin()
 print(f"Hours analysed: {len(df)}")
 print(f"From {df['observed_at_ist'].min()} to {df['observed_at_ist'].max()}")
 print(f"Average AQI: {df['aqi'].mean():.0f}")
-print(f"Worst hour of day: {worst_hour}:00 (avg AQI {by_hour.max():.0f})")
-print(f"Best hour of day: {best_hour}:00 (avg AQI {by_hour.min():.0f})")
+print(f"Worst hour of day: {worst_hour}:00 (avg PM2.5 {by_hour.max():.0f} µg/m³)")
+print(f"Best hour of day: {best_hour}:00 (avg PM2.5 {by_hour.min():.0f} µg/m³)")
 print("Charts saved in the charts/ folder.")
